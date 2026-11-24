@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>乐纯 × 小象超市 投放看板</title>
+<script src="echarts.min.js"></script>
+<style>
+  :root{
+    --red:#E60012; --green:#00B140; --green-deep:#009A38;
+    --ink:#171411; --muted:#6F6A63; --line:#E7E1D6; --paper:#F3EFE6; --card:#FFFCF7;
+    --shadow:0 10px 30px rgba(40,28,12,.06);
+    --cold:#2F6F7A; --haw:#C43B4B; --pb:#C48A12; --rum:#7A3E78;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 500px at -10% -20%, rgba(230,0,18,.07), transparent 50%),
+      radial-gradient(900px 420px at 110% -10%, rgba(0,177,64,.10), transparent 46%),
+      var(--paper);
+    min-height:100vh;
+  }
+  .page{max-width:1280px;margin:0 auto;padding:22px 22px 48px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 4px 22px}
+  .brands{display:flex;align-items:center;gap:14px;min-width:0}
+  .logo-card{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;overflow:hidden;flex:0 0 auto}
+  .logo-card img{width:100%;height:100%;object-fit:contain;display:block}
+  .x-mark{color:#B3AAA0;font-size:18px;font-weight:600}
+  .title-block{min-width:0}
+  .kicker{font-size:12px;letter-spacing:.18em;color:var(--muted);margin-bottom:4px}
+  h1{margin:0;font-size:26px;letter-spacing:.02em;font-weight:650;line-height:1.15}
+  h1 span.thin{font-weight:500;color:#3A3530}
+  .asof{text-align:right;color:var(--muted);font-size:13px;line-height:1.6;white-space:nowrap}
+  .asof b{color:var(--ink);font-weight:600}
+  .section{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:22px;margin-bottom:18px}
+  .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:16px}
+  .section-title{display:flex;align-items:center;gap:10px}
+  .dot{width:10px;height:10px;border-radius:99px;background:linear-gradient(90deg,var(--red),var(--green))}
+  .section-title h2{margin:0;font-size:18px;font-weight:650}
+  .section-title p{margin:4px 0 0;color:var(--muted);font-size:12.5px}
+  .subhead{display:flex;align-items:baseline;gap:10px;margin:16px 0 10px}
+  .subhead h3{margin:0;font-size:14.5px;font-weight:650}
+  .subhead span{font-size:11.5px;color:var(--muted)}
+  .stack{display:grid;grid-template-columns:1fr;gap:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chart-box{border:1px solid #EFE9DE;border-radius:16px;padding:14px 12px 6px;background:#fff}
+  .chart-box h3{margin:0 2px;font-size:13.5px;font-weight:650;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .chart-box h3 em{font-style:normal;font-size:11px;color:var(--muted);font-weight:500}
+  .chart-box .sub{font-size:11.5px;color:var(--muted);margin:3px 2px 4px}
+  .chart{width:100%;height:268px}
+  .chart.wide{height:250px}
+  .chart.tall{height:330px}
+  .chart.types{height:260px}
+  .chart.half{height:224px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  .pane-t{font-size:11.5px;color:var(--muted);margin:2px 2px 2px}
+  @media (max-width:900px){.pair{grid-template-columns:1fr}}
+  .chart.mon{height:196px}
+  .mchips{display:flex;gap:10px;flex-wrap:wrap;margin:6px 2px 2px;font-size:11px;color:#6F6A63}
+  .mchips span{display:inline-flex;align-items:center;gap:4px}
+  .mchips i{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .mon-note{font-size:11px;color:var(--muted);margin:10px 2px 2px;padding-top:10px;border-top:1px dashed #EDE6DA}
+  .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:12px 14px;border-bottom:1px solid #EFE9DE;white-space:nowrap}
+  th{background:#FBF7F0;font-weight:600;color:#514C46;text-align:center;font-size:12.5px;border-bottom:1px solid #E4DCCE}
+  td{text-align:center;font-variant-numeric:tabular-nums;font-size:14px}
+  td:first-child,th:first-child{text-align:left}
+  tr.total td{background:#F4EFE6;font-weight:650}
+  .heat-key{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)}
+  .heat-key .ramp{width:120px;height:8px;border-radius:99px;background:linear-gradient(90deg,#2E7D5B,#BFE3CD,#F7E6BE,#C43B4B)}
+  footer{margin-top:26px;color:var(--muted);font-size:11.5px;line-height:1.9;text-align:center}
+  @media (max-width:1100px){.grid2{grid-template-columns:1fr}}
+  @media (max-width:720px){.page{padding:14px 12px 32px}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div class="brands">
+      <div class="logo-card" title="乐纯"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEYAAABGCAIAAAD+THXTAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTM4IDc5LjE1OTgyNCwgMjAxNi8wOS8xNC0wMTowOTowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6RjJDQkExNjU3MDIxMTFFNzkzMTdFQ0E1RkQwOThDNTYiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6RjJDQkExNjQ3MDIxMTFFNzkzMTdFQ0E1RkQwOThDNTYiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjMxOUU4NThGRDcwNTExRTY5RUMzOTlDNzdGNTJEQ0VDIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjMxOUU4NTkwRDcwNTExRTY5RUMzOTlDNzdGNTJEQ0VDIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+KjOlkgAACbxJREFUeNrsWQlUU1ca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" alt="乐纯" /></div>
+      <div class="x-mark">×</div>
+      <div class="logo-card" title="小象超市"><img src="data:image/png;base64,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" alt="小象超市" /></div>
+      <div class="title-block">
+        <div class="kicker">小红书种草投放</div>
+        <h1>乐纯 × 小象超市 <span class="thin">投放看板</span></h1>
+      </div>
+    </div>
+    <div class="asof">数据截至 <b>2026.11.16</b><br />44 篇笔记 · 3 个 SKU · 6–11 月</div>
+  </header>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;"><span class="dot"></span><h2>笔记发布节奏</h2></div>
+          <p>按天发布篇数，柱内颜色=达人等级｜灰底分区=当月，标注当月合计</p>
+        </div>
+      </div>
+    </div>
+    <div class="chart-box"><div id="c1" class="chart tall"></div></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;"><span class="dot"></span><h2>各 SKU：费用 vs POS 销售额</h2></div>
+          <p>柱 = 当日 K+FS 费用（左轴）｜黑线 = POS 周销售额（右轴）｜灰虚线 = 月日均费用、红虚线 = 月日均 POS（均按系数放大以便看清，图例标注倍数，悬停显示真实值）｜底色 = 自然月分区｜默认窗口 = 全周期｜拖动=平移｜拖滑块两端=缩放</p>
+        </div>
+      </div>
+    </div>
+    <div class="stack" id="costGrid"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;"><span class="dot"></span><h2>各 SKU：曝光 / 阅读 / 互动</h2></div>
+          <p>柱 = 曝光量（浅）+ 阅读量（深，叠在曝光上）｜线 = 互动量（右轴）｜时间轴从各 SKU 投放首日开始｜拖动=平移｜拖滑块两端=缩放</p>
+        </div>
+      </div>
+    </div>
+    <div class="stack" id="perfGrid"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;"><span class="dot"></span><h2>内容形式效率</h2></div>
+          <p>每种内容形式一张图：柱=曝光 / FS 展现 / 阅读 / 互动 / 新增 I / 深种 TI，柱顶标注该环节转化率</p>
+        </div>
+      </div>
+    </div>
+    <div class="stack" id="typeGrid"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;"><span class="dot"></span><h2>SKU × 内容方向 CPM</h2></div>
+          <p>CPM =（K+FS）÷ 总曝光 × 1000，元/千次曝光｜按笔记逐篇重算｜— 无笔记｜- CPM 约等于 0</p>
+        </div>
+      </div>
+      <div class="heat-key"><span>低</span><span class="ramp"></span><span>高</span></div>
+    </div>
+    <div id="t5"></div>
+  </section>
+
+  <footer>
+    数据源：《Y26M6-10 小象看板数据源》（截至 11/16）｜K 费用按发布日一次性计入｜FS = 小象计划数据消费（F+S）<br>
+    POS 销售额取商品销售额；映射：冷萃=0蔗糖冷萃90g、山楂=乐纯仙楂干噎100g、PB=小象希腊式干噎100g｜朗姆红提已剔除
+  </footer>
+</div>
+
+<script>
+const D = {"dates":["2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-06","2026-06-07","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-13","2026-06-14","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-19","2026-06-20","2026-06-21","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-27","2026-06-28","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-04","2026-07-05","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-11","2026-07-12","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-18","2026-07-19","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-25","2026-07-26","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-01","2026-08-02","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-08","2026-08-09","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-29","2026-08-30","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12","2026-09-13","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-19","2026-09-20","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-26","2026-09-27","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-03","2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-10","2026-10-11","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-17","2026-10-18","2026-10-19","2026-10-20","2026-10-21","2026-10-22","2026-10-23","2026-10-24","2026-10-25","2026-10-26","2026-10-27","2026-10-28","2026-10-29","2026-10-30","2026-10-31","2026-11-01","2026-11-02","2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-07","2026-11-08","2026-11-09","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-14","2026-11-15","2026-11-16"],"pubList":[{"date":"2026-06-23","blogger":"拖拉拖拉机","tier":"素人","k":527.8},{"date":"2026-06-23","blogger":"你滴妞姐","tier":"素人","k":251.8},{"date":"2026-06-24","blogger":"干饭小仙女","tier":"素人","k":185.67},{"date":"2026-06-24","blogger":"小范的减肥日记","tier":"初级达人","k":934.7},{"date":"2026-06-24","blogger":"咸的美馒","tier":"素人","k":160.81},{"date":"2026-06-25","blogger":"dan","tier":"腰部达人","k":2533.9},{"date":"2026-06-25","blogger":"好好吃饭","tier":"素人","k":437.8},{"date":"2026-06-25","blogger":"曲奇饼干礼盒","tier":"素人","k":793.7},{"date":"2026-06-25","blogger":"JIAYE（减肥成功版）","tier":"素人","k":247.8},{"date":"2026-06-25","blogger":"来亿口馒头","tier":"素人","k":155.8},{"date":"2026-06-25","blogger":"lin1in","tier":"素人","k":534.7},{"date":"2026-06-26","blogger":"只吃亿口吖（测评版）","tier":"素人","k":232.4},{"date":"2026-06-27","blogger":"纳尼学姐","tier":"初级达人","k":939.11},{"date":"2026-06-28","blogger":"还能再吃一碗饭","tier":"素人","k":433.0},{"date":"2026-06-28","blogger":"醒醒","tier":"初级达人","k":923.11},{"date":"2026-06-28","blogger":"一口涂涂","tier":"素人","k":822.7},{"date":"2026-06-28","blogger":"Kainy周丶创业与铁","tier":"素人","k":393.9},{"date":"2026-06-28","blogger":"红心柚a5r","tier":"初级达人","k":911.8},{"date":"2026-06-29","blogger":"小王小王","tier":"素人","k":283.29},{"date":"2026-06-30","blogger":"一粒小只麻","tier":"素人","k":886.8},{"date":"2026-06-30","blogger":"黑凤梨女士","tier":"素人","k":237.19},{"date":"2026-06-30","blogger":"海海一天八杯水","tier":"素人","k":822.49},{"date":"2026-06-30","blogger":"归一","tier":"素人","k":245.7},{"date":"2026-07-21","blogger":"大牙DAYA","tier":"素人","k":582.6},{"date":"2026-07-21","blogger":"一颗桂圆肉卤蛋","tier":"素人","k":166.4},{"date":"2026-07-22","blogger":"糯猪","tier":"素人","k":398.9},{"date":"2026-07-23","blogger":"湘湘","tier":"素人","k":455.8},{"date":"2026-07-23","blogger":"妮卡","tier":"素人","k":536.7},{"date":"2026-07-23","blogger":"开开","tier":"初级达人","k":693.9},{"date":"2026-07-24","blogger":"MELODYklionx","tier":"初级达人","k":739.4},{"date":"2026-07-24","blogger":"番茄fanqie","tier":"初级达人","k":675.7},{"date":"2026-07-24","blogger":"墩墩邦福（减肥中","tier":"素人","k":299.9},{"date":"2026-08-25","blogger":"狂野甜甜圈🍩","tier":"素人","k":455.0},{"date":"2026-09-16","blogger":"努筒","tier":"素人","k":350.0},{"date":"2026-09-20","blogger":"海里海狸","tier":"素人","k":1072.0},{"date":"2026-09-24","blogger":"小恋饭饭","tier":"初级达人","k":284.75},{"date":"2026-09-24","blogger":"小猪包超爱吃","tier":"初级达人","k":1017.8},{"date":"2026-09-27","blogger":"曦亓咕噜Mao","tier":"素人","k":1936.0},{"date":"2026-10-01","blogger":"大哥你不能再哭泣了","tier":"腰部达人","k":4500.0},{"date":"2026-10-20","blogger":"Growingui","tier":"素人","k":140.0},{"date":"2026-10-26","blogger":"小泽爱吃","tier":"腰部达人","k":1100.0},{"date":"2026-10-26","blogger":"平静的村民","tier":"初级达人","k":3000.0},{"date":"2026-10-29","blogger":"Q弹丸丸","tier":"初级达人","k":450.0},{"date":"2026-10-31","blogger":"锅包肉大王（富贵版","tier":"素人","k":450.0},{"date":"2026-11-12","blogger":"11月新增-11-12","tier":"腰部达人","k":0.0},{"date":"2026-11-13","blogger":"11月新增-11-13","tier":"腰部达人","k":0.0},{"date":"2026-11-14","blogger":"11月新增-11-14","tier":"初级达人","k":0.0},{"date":"2026-11-15","blogger":"11月新增-11-15","tier":"初级达人","k":0.0}],"pubByDate":{"2026-06-01":0,"2026-06-02":0,"2026-06-03":0,"2026-06-04":0,"2026-06-05":0,"2026-06-06":0,"2026-06-07":0,"2026-06-08":0,"2026-06-09":0,"2026-06-10":0,"2026-06-11":0,"2026-06-12":0,"2026-06-13":0,"2026-06-14":0,"2026-06-15":0,"2026-06-16":0,"2026-06-17":0,"2026-06-18":0,"2026-06-19":0,"2026-06-20":0,"2026-06-21":0,"2026-06-22":0,"2026-06-23":2,"2026-06-24":3,"2026-06-25":6,"2026-06-26":1,"2026-06-27":1,"2026-06-28":5,"2026-06-29":1,"2026-06-30":4,"2026-07-01":0,"2026-07-02":0,"2026-07-03":0,"2026-07-04":0,"2026-07-05":0,"2026-07-06":0,"2026-07-07":0,"2026-07-08":0,"2026-07-09":0,"2026-07-10":0,"2026-07-11":0,"2026-07-12":0,"2026-07-13":0,"2026-07-14":0,"2026-07-15":0,"2026-07-16":0,"2026-07-17":0,"2026-07-18":0,"2026-07-19":0,"2026-07-20":0,"2026-07-21":2,"2026-07-22":1,"2026-07-23":3,"2026-07-24":3,"2026-07-25":0,"2026-07-26":0,"2026-07-27":0,"2026-07-28":0,"2026-07-29":0,"2026-07-30":0,"2026-07-31":0,"2026-08-01":0,"2026-08-02":0,"2026-08-03":0,"2026-08-04":0,"2026-08-05":0,"2026-08-06":0,"2026-08-07":0,"2026-08-08":0,"2026-08-09":0,"2026-08-10":0,"2026-08-11":0,"2026-08-12":0,"2026-08-13":0,"2026-08-14":0,"2026-08-15":0,"2026-08-16":0,"2026-08-17":0,"2026-08-18":0,"2026-08-19":0,"2026-08-20":0,"2026-08-21":0,"2026-08-22":0,"2026-08-23":0,"2026-08-24":0,"2026-08-25":1,"2026-08-26":0,"2026-08-27":0,"2026-08-28":0,"2026-08-29":0,"2026-08-30":0,"2026-08-31":0,"2026-09-01":0,"2026-09-02":0,"2026-09-03":0,"2026-09-04":0,"2026-09-05":0,"2026-09-06":0,"2026-09-07":0,"2026-09-08":0,"2026-09-09":0,"2026-09-10":0,"2026-09-11":0,"2026-09-12":0,"2026-09-13":0,"2026-09-14":0,"2026-09-15":0,"2026-09-16":1,"2026-09-17":0,"2026-09-18":0,"2026-09-19":0,"2026-09-20":1,"2026-09-21":0,"2026-09-22":0,"2026-09-23":0,"2026-09-24":2,"2026-09-25":0,"2026-09-26":0,"2026-09-27":1,"2026-09-28":0,"2026-09-29":0,"2026-09-30":0,"2026-10-01":1,"2026-10-02":0,"2026-10-03":0,"2026-10-04":0,"2026-10-05":0,"2026-10-06":0,"2026-10-07":0,"2026-10-08":0,"2026-10-09":0,"2026-10-10":0,"2026-10-11":0,"2026-10-12":0,"2026-10-13":0,"2026-10-14":0,"2026-10-15":0,"2026-10-16":0,"2026-10-17":0,"2026-10-18":0,"2026-10-19":0,"2026-10-20":1,"2026-10-21":0,"2026-10-22":0,"2026-10-23":0,"2026-10-24":0,"2026-10-25":0,"2026-10-26":2,"2026-10-27":0,"2026-10-28":0,"2026-10-29":1,"2026-10-30":0,"2026-10-31":1,"2026-11-01":0,"2026-11-02":0,"2026-11-03":0,"2026-11-04":0,"2026-11-05":0,"2026-11-06":0,"2026-11-07":0,"2026-11-08":0,"2026-11-09":0,"2026-11-10":0,"2026-11-11":0,"2026-11-12":1,"2026-11-13":1,"2026-11-14":1,"2026-11-15":1,"2026-11-16":0},"pubByDateTier":{"2026-06-01":{},"2026-06-02":{},"2026-06-03":{},"2026-06-04":{},"2026-06-05":{},"2026-06-06":{},"2026-06-07":{},"2026-06-08":{},"2026-06-09":{},"2026-06-10":{},"2026-06-11":{},"2026-06-12":{},"2026-06-13":{},"2026-06-14":{},"2026-06-15":{},"2026-06-16":{},"2026-06-17":{},"2026-06-18":{},"2026-06-19":{},"2026-06-20":{},"2026-06-21":{},"2026-06-22":{},"2026-06-23":{"素人":2},"2026-06-24":{"素人":2,"初级达人":1},"2026-06-25":{"腰部达人":1,"素人":5},"2026-06-26":{"素人":1},"2026-06-27":{"初级达人":1},"2026-06-28":{"素人":3,"初级达人":2},"2026-06-29":{"素人":1},"2026-06-30":{"素人":4},"2026-07-01":{},"2026-07-02":{},"2026-07-03":{},"2026-07-04":{},"2026-07-05":{},"2026-07-06":{},"2026-07-07":{},"2026-07-08":{},"2026-07-09":{},"2026-07-10":{},"2026-07-11":{},"2026-07-12":{},"2026-07-13":{},"2026-07-14":{},"2026-07-15":{},"2026-07-16":{},"2026-07-17":{},"2026-07-18":{},"2026-07-19":{},"2026-07-20":{},"2026-07-21":{"素人":2},"2026-07-22":{"素人":1},"2026-07-23":{"素人":2,"初级达人":1},"2026-07-24":{"初级达人":2,"素人":1},"2026-07-25":{},"2026-07-26":{},"2026-07-27":{},"2026-07-28":{},"2026-07-29":{},"2026-07-30":{},"2026-07-31":{},"2026-08-01":{},"2026-08-02":{},"2026-08-03":{},"2026-08-04":{},"2026-08-05":{},"2026-08-06":{},"2026-08-07":{},"2026-08-08":{},"2026-08-09":{},"2026-08-10":{},"2026-08-11":{},"2026-08-12":{},"2026-08-13":{},"2026-08-14":{},"2026-08-15":{},"2026-08-16":{},"2026-08-17":{},"2026-08-18":{},"2026-08-19":{},"2026-08-20":{},"2026-08-21":{},"2026-08-22":{},"2026-08-23":{},"2026-08-24":{},"2026-08-25":{"素人":1},"2026-08-26":{},"2026-08-27":{},"2026-08-28":{},"2026-08-29":{},"2026-08-30":{},"2026-08-31":{},"2026-09-01":{},"2026-09-02":{},"2026-09-03":{},"2026-09-04":{},"2026-09-05":{},"2026-09-06":{},"2026-09-07":{},"2026-09-08":{},"2026-09-09":{},"2026-09-10":{},"2026-09-11":{},"2026-09-12":{},"2026-09-13":{},"2026-09-14":{},"2026-09-15":{},"2026-09-16":{"素人":1},"2026-09-17":{},"2026-09-18":{},"2026-09-19":{},"2026-09-20":{"素人":1},"2026-09-21":{},"2026-09-22":{},"2026-09-23":{},"2026-09-24":{"初级达人":2},"2026-09-25":{},"2026-09-26":{},"2026-09-27":{"素人":1},"2026-09-28":{},"2026-09-29":{},"2026-09-30":{},"2026-10-01":{"腰部达人":1},"2026-10-02":{},"2026-10-03":{},"2026-10-04":{},"2026-10-05":{},"2026-10-06":{},"2026-10-07":{},"2026-10-08":{},"2026-10-09":{},"2026-10-10":{},"2026-10-11":{},"2026-10-12":{},"2026-10-13":{},"2026-10-14":{},"2026-10-15":{},"2026-10-16":{},"2026-10-17":{},"2026-10-18":{},"2026-10-19":{},"2026-10-20":{"素人":1},"2026-10-21":{},"2026-10-22":{},"2026-10-23":{},"2026-10-24":{},"2026-10-25":{},"2026-10-26":{"腰部达人":1,"初级达人":1},"2026-10-27":{},"2026-10-28":{},"2026-10-29":{"初级达人":1},"2026-10-30":{},"2026-10-31":{"素人":1},"2026-11-01":{},"2026-11-02":{},"2026-11-03":{},"2026-11-04":{},"2026-11-05":{},"2026-11-06":{},"2026-11-07":{},"2026-11-08":{},"2026-11-09":{},"2026-11-10":{},"2026-11-11":{},"2026-11-12":{"腰部达人":1},"2026-11-13":{"腰部达人":1},"2026-11-14":{"初级达人":1},"2026-11-15":{"初级达人":1},"2026-11-16":{}},"tiers":["素人","初级达人","腰部达人"],"notesBySku":{"2026-06-01":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-02":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-03":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-04":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-05":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-06":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-07":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-08":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-09":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-10":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-11":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-12":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-13":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-14":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-15":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-16":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-17":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-18":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-19":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-20":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-21":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-22":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-23":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":2},"2026-06-24":{"冷萃希腊酸奶":2,"小象PB干噎酸奶":0,"山楂干噎酸奶":1},"2026-06-25":{"冷萃希腊酸奶":5,"小象PB干噎酸奶":0,"山楂干噎酸奶":1},"2026-06-26":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":1},"2026-06-27":{"冷萃希腊酸奶":1,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-28":{"冷萃希腊酸奶":4,"小象PB干噎酸奶":0,"山楂干噎酸奶":1},"2026-06-29":{"冷萃希腊酸奶":1,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-06-30":{"冷萃希腊酸奶":2,"小象PB干噎酸奶":0,"山楂干噎酸奶":2},"2026-07-01":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-02":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-03":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-04":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-05":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-06":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-07":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-08":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-09":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-10":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-11":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-12":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-13":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-14":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-15":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-16":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-17":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-18":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-19":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-20":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-21":{"冷萃希腊酸奶":1,"小象PB干噎酸奶":0,"山楂干噎酸奶":1},"2026-07-22":{"冷萃希腊酸奶":1,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-23":{"冷萃希腊酸奶":2,"小象PB干噎酸奶":0,"山楂干噎酸奶":1},"2026-07-24":{"冷萃希腊酸奶":1,"小象PB干噎酸奶":0,"山楂干噎酸奶":1},"2026-07-25":{"冷萃希腊酸奶":1,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-26":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-27":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-28":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-29":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-30":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-07-31":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-01":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-02":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-03":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-04":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-05":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-06":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-07":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-08":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-09":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-10":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-11":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-12":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-13":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-14":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-15":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-16":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-17":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-18":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-19":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-20":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-21":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-22":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-23":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-24":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-25":{"冷萃希腊酸奶":1,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-26":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-27":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-28":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-29":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-30":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-08-31":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-01":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-02":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-03":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-04":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-05":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-06":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-07":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-08":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-09":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-10":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-11":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-12":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-13":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-14":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-15":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-16":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":1,"山楂干噎酸奶":0},"2026-09-17":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-18":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-19":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-20":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":1,"山楂干噎酸奶":0},"2026-09-21":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-22":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-23":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-24":{"冷萃希腊酸奶":2,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-25":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-26":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-27":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":1,"山楂干噎酸奶":0},"2026-09-28":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-29":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-09-30":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-01":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":1,"山楂干噎酸奶":0},"2026-10-02":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-03":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-04":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-05":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-06":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-07":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-08":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-09":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-10":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-11":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-12":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-13":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-14":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-15":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-16":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-17":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-18":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-19":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-20":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":1,"山楂干噎酸奶":0},"2026-10-21":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-22":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-23":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-24":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-25":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-26":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":2,"山楂干噎酸奶":0},"2026-10-27":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-28":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-29":{"冷萃希腊酸奶":1,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-30":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-10-31":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":1,"山楂干噎酸奶":0},"2026-11-01":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-02":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-03":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-04":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-05":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-06":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-07":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-08":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-09":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-10":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-11":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-12":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-13":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-14":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-15":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0},"2026-11-16":{"冷萃希腊酸奶":0,"小象PB干噎酸奶":0,"山楂干噎酸奶":0}},"cost":{"冷萃希腊酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,1121.0,5006.46,483.1,1877.33,3710.07,1147.15,1337.33,695.66,565.06,1065.03,607.45,629.38,740.56,383.33,457.64,394.53,553.57,474.14,440.36,269.54,204.11,156.93,184.55,570.94,370.68,521.19,264.26,785.18,602.42,1115.95,709.97,403.59,237.29,124.19,261.55,237.04,99.74,143.93,196.8,307.86,376.97,461.6,19.11,490.75,323.1,547.12,521.76,62.06,41.77,23.97,60.61,38.73,54.13,103.31,50.78,43.45,39.77,77.47,82.22,124.48,135.72,68.48,548.52,70.38,61.93,427.17,464.68,477.13,385.12,285.14,233.36,125.64,60.72,75.65,122.23,56.88,167.25,343.84,2.3,2.21,4.5,7.53,93.23,52.65,65.35,52.02,61.4,93.22,47.8,61.23,44.47,46.9,1336.72,48.35,73.23,110.51,92.59,97.62,101.09,275.3,283.23,298.99,260.82,205.1,170.79,264.72,48.9,0.0,0.0,0,0,0.0,0,0.0,0.0,0.0,0,0,0.0,0.0,0.0,30.34,118.53,126.27,53.08,95.68,24.36,450.0,0.0,0.0,0.0,0.0,65.0,52.0,147.0,248.0,48.0,161.0,244.0,134.0,93.0,3073.0,334.0,1986.0,93.0,154.0],"小象PB干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,350.0,0.0,475.85,410.2,1163.35,270.22,527.28,402.67,267.27,627.37,1013.01,2316.25,30.63,536.28,649.46,5304.55,808.97,808.51,610.65,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0,0.0,0.0,0.0,0,0,140.0,0.0,70.1,104.29,29.66,49.63,4129.51,97.72,43.08,36.17,277.55,450.77,0.0,0.0,1976.0,174.0,230.0,270.0,185.0,403.0,267.0,369.0,410.0,1163.0,4248.0,132.0,3027.0,129.0],"山楂干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,780.0,161.0,156.0,232.0,0.0,823.0,0.0,1709.0,0.0,0.0,0.0,0.0,0.0,0.0,67.02,78.2,148.32,36.8,108.38,163.2,154.69,101.17,59.14,107.76,155.31,156.8,210.57,133.5,249.77,105.87,757.79,750.34,16.9,45.74,88.05,21.3,13.91,23.39,22.81,27.37,39.79,37.63,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0,0.0,0.0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"k":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0,0.0,0.0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"fs":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0,0.0,0.0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"total_cost":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0,0.0,0.0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"datesPos":["2026-05-01","2026-05-02","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-09","2026-05-10","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-16","2026-05-17","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-23","2026-05-24","2026-05-25","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-05-30","2026-05-31","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-06","2026-06-07","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-13","2026-06-14","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-19","2026-06-20","2026-06-21","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-27","2026-06-28","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-04","2026-07-05","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-11","2026-07-12","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-18","2026-07-19","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-25","2026-07-26","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-01","2026-08-02","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-08","2026-08-09","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-29","2026-08-30","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12","2026-09-13","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-19","2026-09-20","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-26","2026-09-27","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-03","2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-10","2026-10-11","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-17","2026-10-18","2026-10-19","2026-10-20","2026-10-21","2026-10-22","2026-10-23","2026-10-24","2026-10-25","2026-10-26","2026-10-27","2026-10-28","2026-10-29","2026-10-30","2026-10-31","2026-11-01","2026-11-02","2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-07","2026-11-08","2026-11-09","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-14","2026-11-15","2026-11-16"],"posFrom":{"冷萃希腊酸奶":"2026-05-01","小象PB干噎酸奶":"2026-08-01","山楂干噎酸奶":"2026-06-01"},"pos":{"冷萃希腊酸奶":[null,null,null,null,null,null,null,null,null,272054.89,null,null,null,null,null,null,281615.38,null,null,null,null,null,null,326118.27,null,null,null,null,null,null,359787.38,null,null,null,null,null,null,366154.87,null,null,null,null,null,null,469681.45,null,null,null,null,null,null,292613.92,null,null,null,null,null,null,333901.3,null,null,null,null,null,null,350034.13,null,null,null,null,null,null,333938.05,null,null,null,null,null,null,341925.76,null,null,null,null,null,null,347200.54,null,null,null,null,null,null,322883.14,null,null,null,null,null,null,306900.43,null,null,null,null,null,null,299335.81,null,null,null,null,null,null,275528.0,null,null,null,null,null,null,306481.07,null,null,null,null,null,null,324336.31,null,null,null,null,null,null,346563.9,null,null,null,null,null,null,327212.15,null,null,null,null,null,null,283010.53,null,null,null,null,null,null,253482.96,null,null,null,null,null,null,396276.17,null,null,null,null,null,null,342237.78,null,null,null,null,null,null,493984.52,null,null,null,null,null,null,751162.85,null,null,null,null,null,null,933771.0,null,null,null,null,null,null,890996.0,null],"小象PB干噎酸奶":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,127667.32,null,null,null,null,null,null,164597.86,null,null,null,null,null,null,218668.12,null,null,null,null,null,null,240694.53,null,null,null,null,null,null,250286.74,null,null,null,null,null,null,249864.3,null,null,null,null,null,null,254413.67,null,null,null,null,null,null,280476.07,null,null,null,null,null,null,323014.19,null,null,null,null,null,null,320929.04,null,null,null,null,null,null,391472.1,null,null,null,null,null,null,407561.94,null,null,null,null,null,null,457240.75,null,null,null,null,null,null,500444.0,null,null,null,null,null,null,425968.0,null],"山楂干噎酸奶":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,73333.83,null,null,null,null,null,null,117474.9,null,null,null,null,null,null,91371.57,null,null,null,null,null,null,88364.96,null,null,null,null,null,null,103399.83,null,null,null,null,null,null,98907.75,null,null,null,null,null,null,70398.86,null,null,null,null,null,null,62948.61,null,null,null,null,null,null,66064.09,null,null,null,null,null,null,67397.9,null,null,null,null,null,null,69062.27,null,null,null,null,null,null,61308.19,null,null,null,null,null,null,58124.84,null,null,null,null,null,null,53961.66,null,null,null,null,null,null,55922.9,null,null,null,null,null,null,45012.36,null,null,null,null,null,null,41278.72,null,null,null,null,null,null,44944.88,null,null,null,null,null,null,69320.38,null,null,null,null,null,null,84673.0,null,null,null,null,null,null,86597.52,null,null,null,null,null,null,141623.27,null,null,null,null,null,null,173928.0,null,null,null,null,null,null,204472.0,null]},"posQty":{"冷萃希腊酸奶":[12200.0,11618.0,12228.0,11222.0,8797.0,12250.0,13282.0,10899.0,10234.0,9886.0,9508.0,20589.0,25636.0,28600.0,11471.0,10123.0,8352.0,7209.0,9368.0,8710.0,10161.0,10500.0,11007.0,10991.0,9969.0,8645.0,13969.0,13459.0,12040.0,14624.0,10508.0,10151.0,8581.0,12188.0,12863.0,9959.0,10162.0,10604.0,11164.0,10180.0,9388.0,12869.0,10238.0,10335.0,10510.0,10202.0,9959.0,10776.0,13710.0,11185.0,10468.0,10319.0,9704.0,9550.0,11738.0,12457.0,11143.0,10497.0,10296.0,9726.0,7871.0,9212.0,10930.0,9713.0,9601.0,8999.0,8616.0,7533.0,9303.0,9949.0,9125.0,9301.0,8776.0,8692.0,7851.0,8982.0,9325.0,8329.0,7633.0,7247.0,7522.0,7903.0,9449.0,10277.0,8047.0,8799.0,8587.0,7670.0,9143.0,11808.0,12418.0,10464.0,10063.0,9830.0,9151.0,8460.0,10745.0,11767.0,9502.0,9377.0,9049.0,8632.0,10958.0,13798.0,16210.0,10636.0,9500.0,8780.0,8337.0,9248.0,13437.0,10916.0,9327.0,9425.0,8264.0,7722.0,8922.0,8223.0,9550.0,7476.0,6920.0,7228.0,8044.0,7844.0,7885.0,8776.0,9240.0,10427.0,13194.0,12764.0,12491.0,11661.0,15843.0,10622.0,11325.0,9879.0,9426.0,7007.0,9569.0,16315.0,19743.0,13144.0,14418.0,15002.0,14057.0,11950.0,14736.0,22377.0,22221.0,19553.0,20013.0,20947.0,23374.0,30599.0,27772.0,26494.0,26393.0,24298.0,24341.0,32394.0,36470.0,26836.0,24660.0,23382.0,23492.0,24195.0,32672.0,34093.0,28982.0],"小象PB干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3135.0,3142.0,3234.0,3344.0,3613.0,3578.0,2709.0,2223.0,3931.0,3851.0,2775.0,5269.0,5508.0,3915.0,3536.0,4787.0,5131.0,5203.0,5400.0,5326.0,5268.0,6236.0,6460.0,5599.0,5791.0,6128.0,6221.0,6144.0,6900.0,7248.0,6035.0,5893.0,5725.0,5834.0,5908.0,7604.0,8356.0,6633.0,6528.0,6431.0,6044.0,5357.0,6832.0,7430.0,6613.0,6079.0,6349.0,5658.0,5957.0,8409.0,6869.0,6245.0,5939.0,6446.0,6624.0,8786.0,7826.0,9031.0,7021.0,7078.0,8375.0,9755.0,9167.0,7546.0,9792.0,7232.0,7194.0,10219.0,8586.0,7543.0,6233.0,11809.0,8018.0,10024.0,9939.0,9760.0,10199.0,11417.0,13298.0,11548.0,9989.0,10789.0,10297.0,9160.0,11849.0,11533.0,10368.0,10981.0,10250.0,10996.0,11153.0,14185.0,16486.0,12212.0,11861.0,12433.0,11719.0,11660.0,17037.0,16523.0,11202.0,10607.0,10341.0,10318.0,10311.0,12869.0,13202.0,10267.0],"山楂干噎酸奶":[1359.0,1130.0,1423.0,1544.0,1137.0,1953.0,2026.0,1875.0,1783.0,2058.0,2060.0,2690.0,3424.0,3775.0,2152.0,2014.0,1838.0,1633.0,2044.0,1728.0,1914.0,2099.0,1989.0,1733.0,1761.0,1489.0,1949.0,1998.0,2122.0,2062.0,1998.0,2309.0,1866.0,2890.0,2373.0,1619.0,1895.0,1634.0,2305.0,2233.0,2768.0,2208.0,1164.0,1539.0,1408.0,1280.0,1279.0,1742.0,1617.0,1262.0,1232.0,1265.0,1054.0,984.0,1446.0,1622.0,1242.0,1285.0,1083.0,1088.0,1458.0,1872.0,1675.0,1413.0,1577.0,1690.0,1348.0,1136.0,1789.0,1275.0,1225.0,1423.0,1308.0,1284.0,1368.0,1704.0,1615.0,1282.0,1120.0,1078.0,1290.0,1348.0,1357.0,1440.0,1106.0,1231.0,1012.0,1037.0,1239.0,1379.0,1537.0,1046.0,1003.0,1019.0,967.0,1036.0,1444.0,1431.0,956.0,1077.0,822.0,984.0,1113.0,1996.0,1574.0,839.0,1142.0,757.0,829.0,899.0,1359.0,827.0,693.0,827.0,655.0,769.0,1289.0,946.0,1057.0,773.0,909.0,998.0,1055.0,1030.0,841.0,874.0,843.0,961.0,1321.0,1286.0,1397.0,1327.0,2526.0,1609.0,1645.0,1789.0,1422.0,1253.0,1889.0,1850.0,1496.0,1613.0,1743.0,1802.0,1356.0,1422.0,2283.0,2786.0,2707.0,2616.0,2650.0,2398.0,3140.0,3652.0,2924.0,2783.0,2990.0,2915.0,3680.0,5321.0,5311.0,3700.0,3524.0,3321.0,3470.0,4452.0,6609.0,6853.0,3573.0]},"exp":{"冷萃希腊酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3539,40432,35031,38955,68687,57046,68913,60882,43899,51036,32870,30935,46181,37722,41266,40325,156192,30826,29131,26388,21120,17271,16668,29462,20404,24680,20089,21415,25625,31204,22397,28205,22843,19129,21135,18516,11133,12804,13837,18349,17450,16738,5207,16896,10608,8199,9246,6442,5156,4511,5243,4460,4999,7939,4219,4179,3389,4432,4677,6226,6783,4431,6611,19621,15402,17241,16033,14720,16176,14800,14565,10311,6866,6392,8635,5863,5048,14480,3349,3038,3062,3611,6474,4770,4860,3733,4960,6758,4448,4419,3732,3141,10810,16049,10104,7796,5682,4834,5317,11457,12460,13710,11785,10046,7877,11045,4645,1838,1098,1012,866,854,907,926,789,753,771,693,754,679,623,1420,3776,3745,1943,2847,950,6754,4775,4153,3689,2757,1970,1576,4455,7515,1455,4879,7394,4061,2818,25711,38407,40461,39862,34775],"小象PB干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,50470,35217,30541,26420,20695,19945,13780,14382,13922,13323,11387,14666,15871,38715,21235,59200,41995,37810,31679,21454,17902,14688,15452,12745,12730,11175,10581,11345,11599,8446,10946,7602,6710,6842,9829,7323,6511,7086,5000,5003,83945,59834,52257,45776,34118,28385,22152,22680,9863,7467,18722,12279,8661,10832,9086,9637,7846,18815,12179,15635,53786,32706],"山楂干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1484,4192,4765,8637,8443,8772,6859,18089,19545,16164,15302,11679,11801,7312,4651,3651,6993,4701,6489,8835,10093,4801,3886,5809,5167,5880,7151,4081,4955,4154,10898,17626,12801,9509,7845,4800,3881,2778,2410,2140,2511,2044,1344,1539,1313,1446,1397,1468,2166,2306,2029,2430,1589,1499,1481,1802,1644,2257,3166,2739,2788,2611,1252,1808,1188,1223,1107,841,902,1033,1688,2583,1051,731,853,991,668,560,413,376,418,400,413,338,380,361,522,402,459,368,390,381,331,302,366,368,385,305,316,327,318,245,391,297,319,290,272,97,107,128,117,111,102,96,112,100,105,116,110,94,124,85,73,69,77,59,73,87,57,71,79,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"read":{"冷萃希腊酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,444,7745,5844,5296,16859,14016,13108,10757,7902,8719,6163,6208,7683,6994,7068,6465,22038,5145,4709,4933,3529,3084,2776,4435,3072,3643,3205,3276,4365,5388,4123,5029,4163,3342,3851,3507,2436,2729,2636,3104,3594,3586,1273,3862,2481,2006,2351,1654,1449,1190,1434,1207,1376,1983,1194,1203,921,1307,1278,1716,1815,1183,1605,3641,2507,3178,3078,2925,3327,3165,2761,1951,1314,1446,1879,1229,1179,3196,766,720,782,893,1647,1144,1186,1016,1143,1666,1139,1052,855,753,1911,2955,1576,1572,1243,1215,1196,2504,2664,2851,2538,2045,1703,2501,700,227,174,217,165,158,155,155,130,153,136,137,128,120,114,339,953,998,503,772,272,1307,1066,750,589,454,374,299,846,1428,276,927,1405,772,535,4885,7297,7688,7574,6607],"小象PB干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13120,10610,7309,5269,4432,5466,3733,3824,3459,3528,2959,3947,4322,12335,7979,37010,30176,23262,17180,11044,10087,8346,9034,7755,7897,6469,5643,5946,6185,4630,6382,3924,3677,3444,3593,2926,2776,3325,2304,2220,19557,16166,11821,9004,7312,7032,5864,6152,3482,2636,6609,4334,3057,3824,3207,3402,2770,6642,4299,5519,18987,11545],"山楂干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,410,854,865,1154,852,1556,1035,2479,2379,2127,1900,1410,1319,825,645,481,849,592,785,1178,1588,620,492,665,614,641,821,437,700,606,2213,5530,5045,2326,1144,777,674,519,363,316,414,308,239,276,263,230,254,315,392,423,385,416,306,277,317,332,354,462,736,551,580,537,233,353,210,192,181,145,145,178,299,476,203,120,132,165,120,88,70,80,80,70,66,55,70,58,104,49,74,58,57,63,52,43,34,55,53,38,37,55,70,45,68,50,54,48,35,13,16,20,30,23,10,13,20,15,21,10,24,8,17,10,12,15,9,5,6,12,6,8,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"eng":{"冷萃希腊酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,53,452,328,203,1963,1090,558,436,273,239,283,219,169,149,136,211,614,112,120,166,83,107,63,74,76,83,59,69,107,301,195,164,175,182,151,79,51,45,39,43,44,40,26,36,38,47,31,22,16,27,32,19,23,14,20,37,15,16,12,13,15,23,67,182,102,96,135,105,117,108,116,84,30,34,57,44,31,121,31,15,30,40,35,28,26,17,51,68,40,25,16,29,220,361,129,68,29,36,39,92,72,111,109,77,70,88,56,22,23,21,14,15,12,9,13,15,9,17,12,8,12,5,21,13,9,7,5,251,133,50,44,28,16,11,33,56,11,37,56,31,22,194,289,305,301,262],"小象PB干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1160,616,224,204,156,181,158,191,139,146,121,245,145,569,721,4445,2583,1405,1171,452,386,448,474,259,234,213,184,203,236,187,314,129,171,114,246,159,133,106,96,119,1519,854,340,352,217,216,224,222,192,146,366,240,169,212,177,188,154,368,238,306,1050,638],"山楂干噎酸奶":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,33,26,45,45,19,92,32,127,78,104,113,22,15,10,3,5,16,12,24,16,13,7,6,5,12,6,13,4,72,18,355,549,236,109,55,36,24,28,14,9,14,7,7,7,11,4,8,12,9,6,3,8,7,4,10,6,8,11,4,3,11,7,4,8,2,3,3,1,3,5,2,3,3,0,4,1,1,1,2,1,1,2,6,0,1,5,6,2,4,0,7,1,2,1,0,2,1,4,2,1,1,2,4,1,2,1,1,1,0,0,3,0,1,0,1,0,1,0,0,1,1,1,0,1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"types":[{"type":"生活化减脂","notes":10,"fs_notes":7,"k":7255.0,"fs":9982.5,"spend":17237.5,"exp":841104,"read":169292,"like":6296,"fav":478,"cmt":228,"eng":7002,"i":17399.0,"ti":8872.0,"fs_imp":323524.0,"i_cost":0.57,"ti_cost":1.13,"i_cost_all":0.99,"ti_ratio":0.5099143628944193,"read_rate":0.20127356426791454,"eng_rate":0.04136048956831983},{"type":"生活吃播/Vlog","notes":5,"fs_notes":3,"k":3455.51,"fs":7274.38,"spend":10729.89,"exp":448458,"read":100101,"like":2936,"fav":297,"cmt":260,"eng":3493,"i":22752.0,"ti":14062.0,"fs_imp":205516.0,"i_cost":0.32,"ti_cost":0.52,"i_cost_all":0.47,"ti_ratio":0.6180555555555556,"read_rate":0.22321153820424655,"eng_rate":0.034894756296140896},{"type":"清单合集/测评","notes":9,"fs_notes":7,"k":6887.66,"fs":8629.45,"spend":15517.11,"exp":1082087,"read":180865,"like":4392,"fav":2131,"cmt":174,"eng":6697,"i":21592.0,"ti":7616.0,"fs_imp":265308.0,"i_cost":0.4,"ti_cost":1.13,"i_cost_all":0.72,"ti_ratio":0.3527232308262319,"read_rate":0.16714460112726612,"eng_rate":0.03702761728360932},{"type":"DIY食谱/低卡改造","notes":10,"fs_notes":4,"k":5327.44,"fs":1505.69,"spend":6833.13,"exp":401571,"read":82219,"like":3105,"fav":1187,"cmt":161,"eng":4453,"i":5611.0,"ti":3442.0,"fs_imp":49305.0,"i_cost":0.27,"ti_cost":0.44,"i_cost_all":1.22,"ti_ratio":0.6134378898592051,"read_rate":0.2047433704127041,"eng_rate":0.054160230603631766},{"type":"玩梗/创意","notes":4,"fs_notes":3,"k":3709.8,"fs":4668.53,"spend":8378.33,"exp":144291,"read":52661,"like":4039,"fav":398,"cmt":63,"eng":4500,"i":10549.0,"ti":2846.0,"fs_imp":40218.0,"i_cost":0.44,"ti_cost":1.64,"i_cost_all":0.79,"ti_ratio":0.2697886055550289,"read_rate":0.3649638577596662,"eng_rate":0.08545223220219897},{"type":"产品直推","notes":6,"fs_notes":4,"k":6565.41,"fs":5416.76,"spend":11982.17,"exp":722318,"read":303713,"like":9932,"fav":5999,"cmt":364,"eng":16295,"i":13724.0,"ti":7774.0,"fs_imp":128467.0,"i_cost":0.39,"ti_cost":0.7,"i_cost_all":0.87,"ti_ratio":0.5664529291751675,"read_rate":0.42046993152600376,"eng_rate":0.05365262599888711}],"cpm":{"types":["生活化减脂","生活吃播/Vlog","清单合集/测评","DIY食谱/低卡改造","玩梗/创意","产品直推","合计"],"cols":["冷萃希腊酸奶","小象PB干噎酸奶","山楂干噎酸奶","合计"],"data":[[20.5,null,null,20.5],[26.6,null,10.1,23.9],[16.7,8.1,22.0,14.3],[17.7,14.5,35.3,19.4],[null,30.4,35.1,30.7],[null,14.6,35.8,16.6],[20.3,14.2,24.3,18.6]]},"window":{"start":"2026-06-01","end":"2026-11-16"},"monthly":{"冷萃希腊酸奶":[{"m":"5月","days":31,"costAvg":0.0,"posAvg":42727.7,"costSum":0,"posSum":1324558.0},{"m":"6月","days":30,"costAvg":489.4,"posAvg":52370.0,"costSum":14682.0,"posSum":1571101.0},{"m":"7月","days":31,"costAvg":460.3,"posAvg":48097.2,"costSum":14270.0,"posSum":1491014.0},{"m":"8月","days":31,"costAvg":215.7,"posAvg":42973.7,"costSum":6687.0,"posSum":1332185.0},{"m":"9月","days":30,"costAvg":132.2,"posAvg":44470.4,"costSum":3966.0,"posSum":1334113.0},{"m":"10月","days":31,"costAvg":87.3,"posAvg":64282.4,"costSum":2706.0,"posSum":1992754.0},{"m":"11月","days":16,"costAvg":427.0,"posAvg":131556.4,"costSum":6832.0,"posSum":2104902.0}],"小象PB干噎酸奶":[{"m":"8月","days":31,"costAvg":0.0,"posAvg":26441.8,"costSum":0.0,"posSum":819696.0},{"m":"9月","days":30,"costAvg":301.3,"posAvg":37514.8,"costSum":9040.0,"posSum":1125445.0},{"m":"10月","days":31,"costAvg":418.1,"posAvg":54472.9,"costSum":12961.0,"posSum":1688659.0},{"m":"11月","days":16,"costAvg":811.4,"posAvg":66887.8,"costSum":12983.0,"posSum":1070205.0}],"山楂干噎酸奶":[{"m":"6月","days":30,"costAvg":128.7,"posAvg":13275.2,"costSum":3861.0,"posSum":398256.0},{"m":"7月","days":31,"costAvg":121.8,"posAvg":11299.1,"costSum":3777.0,"posSum":350271.0},{"m":"8月","days":31,"costAvg":3.4,"posAvg":9261.4,"costSum":105.0,"posSum":287103.0},{"m":"9月","days":30,"costAvg":0.0,"posAvg":6865.0,"costSum":0.0,"posSum":205951.0},{"m":"10月","days":31,"costAvg":0.0,"posAvg":12388.3,"costSum":0.0,"posSum":384037.0},{"m":"11月","days":16,"costAvg":0.0,"posAvg":26695.8,"costSum":0.0,"posSum":427132.0}]},"skuTotals":{"冷萃希腊酸奶":{"k":20071.0,"fs":29071.89,"exp":2179419,"read":413254,"eng":16315,"pos":10929189,"notes":25},"小象PB干噎酸奶":{"k":20548.0,"fs":14436.0,"exp":1308883,"read":480748,"eng":27831,"pos":4613299,"notes":8},"山楂干噎酸奶":{"k":5460.0,"fs":2282.52,"exp":383779,"read":63411,"eng":2695,"pos":2029892,"notes":11}}};
+const SKUS = ["冷萃希腊酸奶","小象PB干噎酸奶","山楂干噎酸奶"];
+const COLOR = {"冷萃希腊酸奶":"#2F6F7A","小象PB干噎酸奶":"#C48A12","山楂干噎酸奶":"#C43B4B"};
+const LIGHT = {"冷萃希腊酸奶":"#AFCAD0","小象PB干噎酸奶":"#E9D1A2","山楂干噎酸奶":"#E6B3B8"};
+const SHORT = {"生活化减脂":"生活化减脂","生活吃播/Vlog":"生活吃播","生活Vlog":"生活吃播","清单合集/测评":"清单/测评","DIY食谱/低卡改造":"DIY食谱","玩梗/创意":"玩梗创意","产品直推":"产品直推","合计":"合计"};
+const fmt = n => (n==null? "—" : Number(n).toLocaleString("zh-CN",{maximumFractionDigits:1}));
+const fmt0 = n => (n==null? "—" : Math.round(n).toLocaleString("zh-CN"));
+
+const AXIS_LABEL = {fontSize:10.5, color:"#8C8479"};
+const AXIS_LINE = {lineStyle:{color:"#E0D8CA"}};
+const SPLIT = {lineStyle:{color:"#F0EAE0"}};
+const TOOLTIP = {backgroundColor:"#FFFCF7", borderColor:"#E7E1D6", borderWidth:1,
+  textStyle:{color:"#171411", fontSize:12}, extraCssText:"box-shadow:0 8px 24px rgba(40,28,12,.12);border-radius:10px;"};
+const BASE = () => ({textStyle:{fontFamily:'"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif'}, animationDuration:400});
+const charts = {};
+const ARROW_PANES = [];
+const initChart = id => (charts[id] = echarts.init(document.getElementById(id)));
+
+// ================= 1. 发布节奏 =================
+(function(){
+  const dates = D.dates;
+  const mmdd = dates.map(d=>d.slice(5));
+  const tiers = D.tiers;
+  const TCOLOR = {"素人":"#9EC2C7","初级达人":"#2F6F7A","腰部达人":"#123B45"};
+  const totals = dates.map(d=>D.pubByDate[d]||0);
+  let cum = 0;
+  const cumArr = dates.map(d=>{ cum += (D.pubByDate[d]||0); return cum; });
+
+  // 月份分区
+  const areas = [];
+  let i = 0;
+  while(i < dates.length){
+    const m = dates[i].slice(0,7);
+    let j = i;
+    while(j+1 < dates.length && dates[j+1].slice(0,7) === m) j++;
+    const cnt = dates.slice(i, j+1).reduce((a,d)=>a+(D.pubByDate[d]||0),0);
+    areas.push([{xAxis: i, itemStyle:{color: (areas.length%2? "rgba(47,111,122,.05)":"rgba(196,59,75,.04)")},
+                 label:{show:true, position:"insideTop", formatter:`${parseInt(m.slice(5),10)}月 · ${cnt}篇`,
+                        color:"#8C8479", fontSize:11, offset:[0,4]}},
+                {xAxis: j}]);
+    i = j + 1;
+  }
+
+  const series = tiers.map(t=>({
+    name:t, type:"bar", stack:"pub", barMaxWidth:12,
+    data: dates.map(d=>((D.pubByDateTier[d]||{})[t]||0)),
+    itemStyle:{color:TCOLOR[t]},
+    emphasis:{focus:"series"}
+  }));
+  // 顶部数字（透明柱承载 label）
+  series.push({
+    name:"", type:"bar", stack:"pub", silent:true, data: dates.map(()=>0),
+    label:{show:true, position:"top", distance:2, fontSize:10.5, color:"#4D4842",
+           formatter:p=> totals[p.dataIndex] ? totals[p.dataIndex] : ""}
+  });
+
+
+  initChart("c1").setOption({
+    ...BASE(),
+    grid:{left:44,right:24,top:40,bottom:34},
+    tooltip:{show:false},
+    legend:{top:0, left:"center", itemWidth:10, itemHeight:8, itemGap:16, textStyle:{fontSize:10.5,color:"#6F6A63"}},
+    xAxis:{type:"category", data:mmdd, boundaryGap:true, axisTick:{show:false}, axisLine:AXIS_LINE,
+      axisLabel:{...AXIS_LABEL, interval:Math.max(0,Math.floor(dates.length/12))}},
+    yAxis:{type:"value", name:"当日篇数", nameTextStyle:{...AXIS_LABEL}, minInterval:1, splitLine:SPLIT, axisLabel:AXIS_LABEL},
+    series: series
+  });
+  // markArea 挂在第一个柱系列上
+  charts.c1.setOption({series:[{markArea:{silent:true, data: areas}}]});
+})();
+
+// ================= 2/3. 分 SKU 时间序列 =================
+const ZSTART = 25, ZEND = 75;
+const dzOf = (st, en) => [
+  {type:"inside", zoomOnMouseWheel:false, moveOnMouseMove:false, moveOnMouseWheel:false, start:st, end:en},
+  {type:"slider", height:14, bottom:26, start:st, end:en, showDetail:false, realtime:true,
+   brushSelect:false, borderColor:"#E7E1D6", fillerColor:"rgba(47,111,122,.25)", handleStyle:{color:"#2F6F7A"},
+   textStyle:{fontSize:9,color:"#8C8479"}, dataBackground:{lineStyle:{color:"#C9BFAE"},areaStyle:{color:"#EFE9DE"}}}
+];
+const maxOf = a => a.reduce((m,v)=>Math.max(m, Math.abs(v)||0), 0);
+function niceMax(v){
+  if(!v || v<=0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v/p;
+  const steps = [1,1.2,1.5,2,2.5,3,4,5,6,8,10];
+  return (steps.find(x=>n<=x) || 10) * p;
+}
+const AXMAX = {};
+SKUS.forEach(s=>{
+  AXMAX[s] = {cost:niceMax(maxOf(D.cost[s])*1.05), pos:niceMax(maxOf(D.pos[s])*1.05),
+              exp:niceMax(maxOf(D.exp[s])*1.05), eng:niceMax(maxOf(D.eng[s])*1.05)};
+});
+
+const costGrid=document.getElementById("costGrid"), perfGrid=document.getElementById("perfGrid");
+SKUS.forEach((s,i)=>{
+  const t=D.skuTotals[s]||{};
+  const mk=(host,id,sub)=>{
+    const box=document.createElement("div"); box.className="chart-box";
+    box.innerHTML=`<h3>${s}</h3><div class="sub">${sub}</div><div id="${id}" class="chart wide"></div>`;
+    host.appendChild(box);
+  };
+  mk(costGrid,"cost"+i,`费用 ¥${fmt0((t.k||0)+(t.fs||0))}｜POS 销售额 ¥${fmt0(t.pos||0)}（周合计累加）`);
+  mk(perfGrid,"perf"+i,`曝光 ${fmt0(t.exp||0)}｜阅读 ${fmt0(t.read||0)}｜互动 ${fmt0(t.eng||0)}`);
+});
+
+SKUS.forEach((s,i)=>{
+  // 该 SKU 的时间轴从它自己的 POS 起点开始
+  const i0 = Math.max(0, D.datesPos.findIndex(d=>d >= (D.posFrom[s]||D.datesPos[0])));
+  const cxDates = D.datesPos.slice(i0);
+  const cxCost = D.cost[s].slice(i0);
+  const cxPos = D.pos[s].slice(i0);
+  // 自然月分区（交替底色 + 月份标签）
+  const monMap2 = {}; (D.monthly[s]||[]).forEach(r=>{ monMap2[r.m] = r; });
+  const starts = [];
+  cxDates.forEach((d,k)=>{ if(k===0 || d.slice(0,7)!==cxDates[k-1].slice(0,7)) starts.push(k); });
+  const BAND = ["rgba(47,111,122,.055)","rgba(196,138,18,.065)","rgba(196,59,75,.045)"];
+  const wfmt = v => v>=10000 ? (v/10000).toFixed(1)+"万" : fmt0(v);
+  const monthEnd = bi => (bi+1<starts.length? starts[bi+1]-1 : cxDates.length-1);
+  const months = starts.map((k,bi)=>{
+    const e = monthEnd(bi);
+    const mNum = Number(cxDates[k].slice(5,7));
+    return {k, e, bi, mNum, row: monMap2[mNum+"月"]};
+  });
+
+  // 月日均（按天铺平）＋膨胀系数，避免贴底看不清
+  const avgCost = cxDates.map(d=>{ const r=monMap2[Number(d.slice(5,7))+"月"]; return r? r.costAvg : null; });
+  const avgPos  = cxDates.map(d=>{ const r=monMap2[Number(d.slice(5,7))+"月"]; return r? r.posAvg  : null; });
+  // 每月一条水平虚线：月初断开，避免出现竖直连接线
+  const flatSeg = (arr)=>{
+    const out = arr.slice();
+    starts.forEach(k=>{ out[k] = null; });
+    return out;
+  };
+  const avgCostPts = flatSeg(avgCost);
+  const avgPosPts  = flatSeg(avgPos);
+  const maxAC = Math.max(1, ...avgCost.filter(v=>v!=null));
+  const maxAP = Math.max(1, ...avgPos.filter(v=>v!=null));
+  const kC = (AXMAX[s].cost*0.52)/maxAC;
+  const kP = (AXMAX[s].pos*0.55)/maxAP;
+  const fmtK = k => "×" + (k>=10 ? k.toFixed(0) : k.toFixed(1));
+
+  // 默认窗口：最后一个「完整」自然月
+  const lastDate = cxDates[cxDates.length-1];
+  const lastDom = new Date(lastDate);
+  const isMonthEnd = (d)=> d.getDate() === new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  let winMonth = lastDate.slice(0,7);
+  if (!isMonthEnd(lastDom)) {
+    const pm = new Date(lastDom.getFullYear(), lastDom.getMonth()-1, 1);
+    winMonth = `${pm.getFullYear()}-${String(pm.getMonth()+1).padStart(2,"0")}`;
+  }
+  const wi0 = Math.max(0, cxDates.findIndex(d=>d.slice(0,7)===winMonth));
+  let wi1 = cxDates.length-1;
+  for (let k=cxDates.length-1;k>=0;k--){ if(cxDates[k].slice(0,7)===winMonth){ wi1=k; break; } }
+  const n = Math.max(1, cxDates.length-1);
+  const z0 = Math.max(0, Math.min(100, wi0/n*100));
+  const z1 = Math.min(100, wi1/n*100);
+
+  initChart("cost"+i).setOption({
+    ...BASE(),
+    grid:{left:64,right:64,top:44,bottom:64}, dataZoom:dzOf(0, 100),
+    tooltip:{...TOOLTIP, trigger:"axis", formatter:ps=>{
+      const ix = ps[0].dataIndex, d = cxDates[ix];
+      const row = monMap2[Number(d.slice(5,7))+"月"];
+      const extra = row ? `<br/><span style="color:#8C8479">${row.m}日均：费用 ¥${fmt0(row.costAvg)}｜POS ${wfmt(row.posAvg)}</span>` : "";
+      const truth = (nm)=>{
+        if(nm.startsWith("日均费用")) return avgCost[ix];
+        if(nm.startsWith("日均 POS")) return avgPos[ix];
+        return null;
+      };
+      const body = ps.filter(p=>p.value!=null).map(p=>{
+        const tv = truth(p.seriesName);
+        return `${p.marker}${p.seriesName}：¥${fmt0(tv!=null? tv : p.data)}`;
+      }).join("<br/>");
+      return `<b>${d}</b><br/>` + body + extra;
+    }},
+    legend:{top:0, left:"center", itemWidth:10, itemHeight:8, itemGap:18, textStyle:{fontSize:10.5,color:"#6F6A63"}},
+    xAxis:{type:"category", data:cxDates.map(d=>d.slice(5)), boundaryGap:true, axisTick:{show:false}, axisLine:AXIS_LINE,
+      axisLabel:{...AXIS_LABEL, interval:(idx)=>months.some(m=>m.k===idx),
+        formatter:(v, idx)=> months.some(m=>m.k===idx) ? `${Number(String(v).slice(0,2))}月` : ""},
+      splitLine:{show:false, interval:(idx)=>months.some(m=>m.k===idx)},
+      splitArea:{show:true, interval:(idx)=>months.some(m=>m.k===idx),
+                 areaStyle:{color:["rgba(47,111,122,.06)","rgba(196,138,18,.07)","rgba(196,59,75,.05)"]}}},
+    yAxis:[
+      {type:"value", name:"费用(元)", nameTextStyle:{...AXIS_LABEL}, splitLine:SPLIT, min:0, max:AXMAX[s].cost, minInterval:1,
+       axisLabel:{...AXIS_LABEL, formatter:v=> v>=1000?(v/1000)+"k":(Number.isInteger(v)?v:"")}},
+      {type:"value", name:"销售额(元)", nameTextStyle:{...AXIS_LABEL}, splitLine:{show:false}, min:0, max:AXMAX[s].pos,
+       axisLabel:{...AXIS_LABEL, formatter:v=> v>=10000?(v/10000)+"w":v}}
+    ],
+    series:[
+      {name:"K+FS 费用", type:"bar", data:cxCost, yAxisIndex:0, barMaxWidth:7,
+       itemStyle:{color:COLOR[s], opacity:.85, borderRadius:[2,2,0,0]}},
+      {name:"POS 销售额（周）", type:"line", data:cxPos, yAxisIndex:1, smooth:true,
+       symbol:"circle", symbolSize:6, connectNulls:true,
+       lineStyle:{width:2, color:"#171411"}, itemStyle:{color:"#171411"}},
+      {name:`日均费用 ${fmtK(kC)}`, type:"line", yAxisIndex:0, showSymbol:false, symbol:"none",
+       data:avgCostPts.map(v=>v==null?null:v*kC), itemStyle:{color:"#5B5348"},
+       lineStyle:{width:1, color:"#5B5348", type:"dashed"}},
+      {name:`日均 POS ${fmtK(kP)}`, type:"line", yAxisIndex:1, showSymbol:false, symbol:"none",
+       data:avgPosPts.map(v=>v==null?null:v*kP), itemStyle:{color:"#C43B4B"},
+       lineStyle:{width:1, color:"#C43B4B", type:"dashed"}}
+    ]
+  });
+
+  // 从该 SKU 投放首日（首次有曝光）开始
+  const p0 = Math.max(0, D.exp[s].findIndex(v=>v>0));
+  const pDates = D.dates.slice(p0);
+  const pExp = D.exp[s].slice(p0), pRead = D.read[s].slice(p0), pEng = D.eng[s].slice(p0);
+  const pStarts = [];
+  pDates.forEach((d,k)=>{ if(k===0 || d.slice(0,7)!==pDates[k-1].slice(0,7)) pStarts.push(k); });
+  initChart("perf"+i).setOption({
+    ...BASE(),
+    grid:{left:64,right:64,top:30,bottom:64}, dataZoom:dzOf(0, 100),
+    tooltip:{...TOOLTIP, trigger:"axis", formatter:ps=>{
+      const ix = ps[0].dataIndex;
+      const exp = pExp[ix]||0, rd = pRead[ix]||0, en = pEng[ix]||0;
+      return `<b>${pDates[ix]}</b><br/>曝光 ${fmt0(exp)}<br/>阅读 ${fmt0(rd)}（${exp? (rd/exp*100).toFixed(1):0}%）<br/>互动 ${fmt0(en)}`;
+    }},
+    legend:{top:0, left:"center", itemWidth:10, itemHeight:8, itemGap:18, textStyle:{fontSize:10.5,color:"#6F6A63"}},
+    xAxis:{type:"category", data:pDates.map(d=>d.slice(5)), boundaryGap:true, axisTick:{show:false}, axisLine:AXIS_LINE,
+      axisLabel:{...AXIS_LABEL, interval:(idx)=>pStarts.includes(idx),
+        formatter:(v, idx)=> pStarts.includes(idx) ? `${Number(String(v).slice(0,2))}月` : ""},
+      splitLine:{show:false, interval:(idx)=>pStarts.includes(idx)},
+      splitArea:{show:true, interval:(idx)=>pStarts.includes(idx),
+                 areaStyle:{color:["rgba(47,111,122,.05)","rgba(196,138,18,.06)","rgba(196,59,75,.045)"]}}},
+    yAxis:[
+      {type:"value", name:"曝光 / 阅读", nameTextStyle:{...AXIS_LABEL}, splitLine:SPLIT, min:0, max:AXMAX[s].exp, minInterval:1,
+       axisLabel:{...AXIS_LABEL, formatter:v=> v>=10000?(v/10000)+"w":(Number.isInteger(v)?v:"")}},
+      {type:"value", name:"互动", nameTextStyle:{...AXIS_LABEL}, splitLine:{show:false}, min:0, max:AXMAX[s].eng,
+       axisLabel:{...AXIS_LABEL, formatter:v=> v>=10000?(v/10000)+"w":(Number.isInteger(v)?v:"")}}
+    ],
+    series:[
+      {name:"曝光量", type:"bar", data:pExp, yAxisIndex:0, barMaxWidth:10,
+       itemStyle:{color:LIGHT[s]}},
+      {name:"阅读量", type:"bar", data:pRead, yAxisIndex:0, barMaxWidth:5, barGap:"-100%",
+       itemStyle:{color:COLOR[s]}},
+      {name:"互动量", type:"line", data:pEng, yAxisIndex:1, smooth:true, symbol:"none",
+       lineStyle:{width:2.2, color:"#00B140"}}
+    ]
+  });
+
+  attachPan(charts["cost"+i], document.getElementById("cost"+i));
+  attachPan(charts["perf"+i], document.getElementById("perf"+i));
+});
+
+// ================= 4. 内容形式效率 =================
+const typeGrid = document.getElementById("typeGrid");
+const TYPES = D.types.filter(t=>t.type!=="合计");
+const pct = v => (isFinite(v)? (v*100).toFixed(1) : "0.0") + "%";
+
+TYPES.forEach((t,i)=>{
+  const box=document.createElement("div"); box.className="chart-box";
+  box.innerHTML = `<h3><span>${SHORT[t.type]||t.type}</span><em>${t.notes} 篇｜投入 ¥${fmt0(t.spend)}</em></h3>
+    <div class="sub">曝光 ${fmt0(t.exp)}｜FS 展现 ${fmt0(t.fs_imp)}｜I 成本 ${t.i_cost.toFixed(2)}｜TI 成本 ${t.ti_cost.toFixed(2)}</div>
+    <div class="pair">
+      <div class="pane"><div class="pane-t">转化效率（曝光 / 阅读 / 互动）</div><div id="tyA${i}" class="chart half"></div></div>
+      <div class="pane"><div class="pane-t">种草效率（FS 展现 / 新增 I+TI / 深种 TI）</div><div id="tyB${i}" class="chart half"></div></div>
+    </div>`;
+  typeGrid.appendChild(box);
+
+  const readRate = t.exp ? t.read/t.exp : 0;
+  const engRate = t.read ? t.eng/t.read : 0;
+  const iTi = t.i + t.ti;
+  const seedRate = t.fs_imp ? iTi/t.fs_imp : 0;
+  const tiRate = iTi ? t.ti/iTi : 0;
+
+  const mkPane = (id, cats, vals, colors, rates, nm) => {
+    const mx = niceMax(Math.max(...vals) * 1.38) || 1;
+    const ch = initChart(id);
+    ARROW_PANES.push({chart: ch, vals});
+    ch.on("finished", ()=>{ if(!ch.__arr){ ch.__arr = 1; drawArrows(ch, vals[0], vals[1], vals[2]); } });
+    ch.setOption({
+      ...BASE(),
+      grid:{left:58,right:20,top:34,bottom:44},
+      tooltip:{...TOOLTIP, trigger:"axis", formatter:ps=>{
+        const p = ps.find(x=>x.value!=null); if(!p) return "";
+        return `<b>${p.name}</b><br/>${p.marker}${p.seriesName}：${fmt0(p.value)}`;
+      }},
+      legend:{show:false},
+      xAxis:{type:"category", data:cats, axisTick:{show:false}, axisLine:AXIS_LINE,
+        axisLabel:{...AXIS_LABEL, interval:0, fontSize:10.5}},
+      yAxis:{type:"value", name:nm, nameTextStyle:{...AXIS_LABEL}, splitLine:SPLIT, min:0, max:mx,
+        interval:mx/4, axisLabel:{...AXIS_LABEL, formatter:v=> v>=10000?(v/10000)+"w":fmt0(v)}},
+      series: vals.map((v,k)=>({
+        name: cats[k], type:"bar", barMaxWidth:34, barGap:"-100%",
+        data: [0,1,2].map(j=> j===k ? v : null),
+        itemStyle:{color:colors[k], borderRadius:[4,4,0,0]},
+        label:{show:true, position:"top", distance:8, lineHeight:15,
+          rich:{
+            rate:{backgroundColor:"rgba(47,111,122,.12)", borderColor:"rgba(47,111,122,.25)", borderWidth:1,
+                  color:"#2F6F7A", fontSize:10, fontWeight:600, padding:[3,7], borderRadius:9},
+            val:{color:"#4D4842", fontSize:10, padding:[4,0,0,0]}
+          },
+          formatter: rates[k]==null
+            ? ()=>`{val|${fmt0(v)}}`
+            : ()=>`{rate|${pct(rates[k])}}\n{val|${fmt0(v)}}`
+        }
+      }))
+    });
+  };
+
+  const drawArrows = (chart, v0, v1, v2)=>{
+    const els = [];
+    const pairs = [[0, v0, v1], [1, v1, v2]];
+    pairs.forEach(([idx, a, b])=>{
+      const x1 = chart.convertToPixel({xAxisIndex:0}, idx) + 20;
+      const y1 = chart.convertToPixel({yAxisIndex:0}, a) - 6;
+      const x2 = chart.convertToPixel({xAxisIndex:0}, idx+1) - 26;
+      const y2 = chart.convertToPixel({yAxisIndex:0}, b) - 6;
+      const dx = Math.max(24, (x2-x1)*0.45);
+      els.push({type:"bezierCurve", silent:true, z:1,
+        shape:{x1, y1, x2, y2, cpx1:x1+dx, cpy1:y1-16, cpx2:x2-dx, cpy2:y2-16},
+        style:{stroke:"#B9AE9E", lineWidth:1.1, lineDash:[4,4], fill:null}});
+      els.push({type:"polygon", silent:true, z:1,
+        shape:{points:[[x2, y2], [x2-7, y2-3.5], [x2-7, y2+3.5]]},
+        style:{fill:"#B9AE9E"}});
+    });
+    chart.setOption({graphic:{elements: els}}, {replaceMerge:["graphic"]});
+  };
+
+  mkPane("tyA"+i,
+    ["曝光", "阅读", "互动"],
+    [t.exp, t.read, t.eng],
+    ["#CBD9DB", "#2F6F7A", "#00B140"],
+    [null, readRate, engRate], "转化量");
+
+  mkPane("tyB"+i,
+    ["FS 展现", "新增 I+TI", "深种 TI"],
+    [t.fs_imp, iTi, t.ti],
+    ["#8FB8BF", "#C48A12", "#C43B4B"],
+    [null, seedRate, tiRate], "种草量");
+});
+
+// ================= 5. CPM 矩阵 =================
+(function(){
+  const cpm = D.cpm;
+  const cols = cpm.cols;
+  const idx = Object.fromEntries(cols.map((c,i)=>[c,i]));
+  const vals = cpm.data.flat().filter(v=>v!=null && v>0).sort((a,b)=>a-b);
+  const vmax = vals[vals.length-1], vmin = vals[0];
+  const q33 = vals[Math.floor(vals.length*0.33)], q66 = vals[Math.floor(vals.length*0.66)];
+  const lerp=(a,b,k)=>a.map((x,i)=>Math.round(x+(b[i]-x)*k));
+  const GREEN=[46,125,91], LIME=[191,227,205], CREAM=[247,230,190], RED=[196,59,75];
+  const heat = v=>{
+    if(v==null) return {bg:"transparent", white:false};
+    let c, white=false;
+    if(v<=q33){
+      const k = q33>vmin ? (v-vmin)/(q33-vmin) : 0;
+      c = lerp(GREEN, LIME, k); white = k < 0.55;
+    } else if(v<=q66){
+      const k = q66>q33 ? (v-q33)/(q66-q33) : 0;
+      c = lerp(LIME, CREAM, k);
+    } else {
+      const k = vmax>q66 ? (v-q66)/(vmax-q66) : 0;
+      c = lerp(CREAM, RED, k); white = k > 0.62;
+    }
+    return {bg:`rgb(${c.join(",")})`, white};
+  };
+
+  let html = `<div class="table-wrap"><table><thead><tr><th>内容类型</th>`;
+  cols.forEach(s=>html+=`<th>${s}</th>`);
+  html += `</tr></thead><tbody>`;
+  cpm.types.forEach((t,ri)=>{
+    const isTotal = t==="合计";
+    html += `<tr class="${isTotal?'total':''}"><td>${SHORT[t]||t}</td>`;
+    cols.forEach(s=>{
+      const v = cpm.data[ri][idx[s]];
+      const zero = v!=null && Math.abs(v) < 1;
+      const h = zero ? {bg:"transparent", white:false} : heat(v);
+      const txt = v==null ? "—" : (zero ? "-" : v.toFixed(1));
+      html += `<td style="background:${h.bg};color:${h.white?"#fff":"#171411"};font-weight:650">${txt}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>`;
+  document.getElementById("t5").innerHTML = html;
+})();
+
+// ================= 拖拽平移 =================
+function attachPan(chart, dom){
+  let dragging=false, startX=0, startPct=0, span=ZEND-ZSTART, w=1, raf=0, pending=null;
+  dom.style.cursor="grab"; dom.style.userSelect="none";
+  const sliderTop = () => dom.clientHeight - 44;
+  dom.addEventListener("mousedown", e=>{
+    if (e.offsetY > sliderTop()) return;
+    const dz0 = chart.getOption().dataZoom && chart.getOption().dataZoom[0];
+    if(!dz0) return;
+    dragging = true; startX = e.clientX; startPct = dz0.start; span = dz0.end - dz0.start;
+    w = dom.clientWidth || 800;
+    dom.style.cursor = "grabbing";
+    chart.dispatchAction({type:"hideTip"});
+    e.preventDefault();
+  }, true);
+  window.addEventListener("mousemove", e=>{
+    if(!dragging) return;
+    const dx = e.clientX - startX;
+    let newStart = startPct - (dx * span / w);
+    newStart = Math.max(0, Math.min(100 - span, newStart));
+    pending = [newStart, newStart + span];
+    if(!raf){
+      raf = requestAnimationFrame(()=>{
+        raf = 0;
+        if(pending) chart.dispatchAction({type:"dataZoom", start:pending[0], end:pending[1]});
+      });
+    }
+  }, true);
+  const stop = ()=>{ if(dragging){ dragging=false; dom.style.cursor="grab"; } };
+  window.addEventListener("mouseup", stop, true);
+  window.addEventListener("mouseleave", stop, true);
+}
+
+window.addEventListener("resize", ()=>{
+  Object.values(charts).forEach(c=>c.resize());
+  ARROW_PANES.forEach(o=>drawArrows(o.chart, o.vals[0], o.vals[1], o.vals[2]));
+});
+</script>
+</body>
+</html>
