@@ -180,22 +180,30 @@ const initChart = id => (charts[id] = echarts.init(document.getElementById(id)))
 
 // ================= 1. 发布节奏 =================
 (function(){
-  const dates = D.dates;
+  // 时间轴补到 11/30，保证 11 月的底色分区是完整的
+  const dates = D.dates.slice();
+  const lastD = dates[dates.length-1];
+  if (lastD < "2026-11-30") {
+    const dt = new Date(lastD);
+    while (dt.toISOString().slice(0,10) < "2026-11-30") {
+      dt.setDate(dt.getDate()+1);
+      dates.push(dt.toISOString().slice(0,10));
+    }
+  }
   const mmdd = dates.map(d=>d.slice(5));
   const tiers = D.tiers;
   const TCOLOR = {"素人":"#9EC2C7","初级达人":"#2F6F7A","腰部达人":"#123B45"};
   const totals = dates.map(d=>D.pubByDate[d]||0);
-  let cum = 0;
-  const cumArr = dates.map(d=>{ cum += (D.pubByDate[d]||0); return cum; });
 
   // 月份分区
-  const areas = [];
+  const areas = [], mStarts = [];
   let i = 0;
   while(i < dates.length){
     const m = dates[i].slice(0,7);
     let j = i;
     while(j+1 < dates.length && dates[j+1].slice(0,7) === m) j++;
     const cnt = dates.slice(i, j+1).reduce((a,d)=>a+(D.pubByDate[d]||0),0);
+    mStarts.push(i);
     areas.push([{xAxis: i, itemStyle:{color: (areas.length%2? "rgba(47,111,122,.05)":"rgba(196,59,75,.04)")},
                  label:{show:true, position:"insideTop", formatter:`${parseInt(m.slice(5),10)}月 · ${cnt}篇`,
                         color:"#8C8479", fontSize:11, offset:[0,4]}},
@@ -209,25 +217,29 @@ const initChart = id => (charts[id] = echarts.init(document.getElementById(id)))
     itemStyle:{color:TCOLOR[t]},
     emphasis:{focus:"series"}
   }));
-  // 顶部数字（透明柱承载 label）
   series.push({
     name:"", type:"bar", stack:"pub", silent:true, data: dates.map(()=>0),
     label:{show:true, position:"top", distance:2, fontSize:10.5, color:"#4D4842",
            formatter:p=> totals[p.dataIndex] ? totals[p.dataIndex] : ""}
   });
 
-
   initChart("c1").setOption({
     ...BASE(),
     grid:{left:44,right:24,top:40,bottom:34},
-    tooltip:{show:false},
+    tooltip:{...TOOLTIP, trigger:"axis", axisPointer:{type:"shadow"}, formatter:ps=>{
+      const ix = ps[0].dataIndex, d = dates[ix];
+      const list = (D.pubList||[]).filter(p=>p.date===d);
+      if(!list.length) return `<b>${d}</b><br/>当日无发布`;
+      const rows = list.map(p=>`　${p.blogger}（${p.tier}）`).join("<br/>");
+      return `<b>${d}</b><br/>发布 ${list.length} 篇<br/>${rows}`;
+    }},
     legend:{top:0, left:"center", itemWidth:10, itemHeight:8, itemGap:16, textStyle:{fontSize:10.5,color:"#6F6A63"}},
     xAxis:{type:"category", data:mmdd, boundaryGap:true, axisTick:{show:false}, axisLine:AXIS_LINE,
-      axisLabel:{...AXIS_LABEL, interval:Math.max(0,Math.floor(dates.length/12))}},
+      axisLabel:{...AXIS_LABEL, interval:(idx)=>mStarts.includes(idx),
+        formatter:(v, idx)=> mStarts.includes(idx) ? `${Number(String(v).slice(0,2))}月` : ""}},
     yAxis:{type:"value", name:"当日篇数", nameTextStyle:{...AXIS_LABEL}, minInterval:1, splitLine:SPLIT, axisLabel:AXIS_LABEL},
     series: series
   });
-  // markArea 挂在第一个柱系列上
   charts.c1.setOption({series:[{markArea:{silent:true, data: areas}}]});
 })();
 
